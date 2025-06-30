@@ -51,12 +51,12 @@ def process_onbuy(orders):
                 prods = []
         for p in prods:
             rows.append({
-                "sku":              p.get("sku"),
-                "onbuy_quantity":   int(p.get("quantity", 0))
+                "sku":            p.get("sku"),
+                "onbuy_quantity": int(p.get("quantity", 0))
             })
     df = pd.DataFrame(rows)
     if df.empty:
-        # ensure columns exist even if no rows
+        # ensure columns exist
         return pd.DataFrame(columns=["sku", "onbuy_quantity"])
     return df.groupby("sku", as_index=False)["onbuy_quantity"].sum()
 
@@ -83,14 +83,10 @@ def get_ebay_orders(token):
     r = requests.get(
         "https://api.ebay.com/sell/fulfillment/v1/order",
         headers={"Authorization": f"Bearer {token}"},
-        params={
-            "filter": "orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS}",
-            "limit":  100
-        }
+        params={"filter": "orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS}", "limit": 100}
     )
     r.raise_for_status()
     orders = r.json().get("orders", [])
-    # keep only awaiting dispatch
     return [o for o in orders if o.get("orderFulfillmentStatus") == "NOT_STARTED"]
 
 def process_ebay(orders):
@@ -98,45 +94,49 @@ def process_ebay(orders):
     for o in orders:
         for li in o.get("lineItems", []):
             rows.append({
-                "sku":             li.get("sku"),
-                "ebay_quantity":   int(li.get("quantity", 0))
+                "sku":           li.get("sku"),
+                "ebay_quantity": int(li.get("quantity", 0))
             })
     df = pd.DataFrame(rows)
     if df.empty:
         return pd.DataFrame(columns=["sku", "ebay_quantity"])
     return df.groupby("sku", as_index=False)["ebay_quantity"].sum()
 
-# — This is the function your Streamlit app will call —
+# — Build combined report DataFrame —
 def build_report_df():
-    # 1) fetch & aggregate
+    # fetch & aggregate each marketplace
     df_onbuy = process_onbuy(get_onbuy_orders(get_onbuy_token()))
     df_ebay  = process_ebay(get_ebay_orders(get_ebay_token()))
 
-    # 2) join SKUs (now guaranteed to have 'sku')
+    # ensure both have a 'sku' column before merging
+    if "sku" not in df_onbuy.columns:
+        df_onbuy = pd.DataFrame(columns=["sku", "onbuy_quantity"])
+    if "sku" not in df_ebay.columns:
+        df_ebay  = pd.DataFrame(columns=["sku", "ebay_quantity"])
+
+    # merge and compute totals
     df = pd.merge(df_onbuy, df_ebay, on="sku", how="outer").fillna(0)
     df["onbuy_quantity"] = df["onbuy_quantity"].astype(int)
     df["ebay_quantity"]  = df["ebay_quantity"].astype(int)
     df["total_quantity"] = df["onbuy_quantity"] + df["ebay_quantity"]
 
-    # 3) map names
+    # map product names
     mapping = pd.read_excel(MAPPING_FILE, usecols="C:D")
     mapping.columns = mapping.columns.str.strip().str.lower().str.replace(" ", "_")
-    mapping = (
-        mapping.rename(columns={"sku":"sku", "product_name":"product_name"})
-               .drop_duplicates(subset=["sku"])
-    )
-
+    mapping = mapping.rename(columns={"sku":"sku","product_name":"product_name"}) \
+                     .drop_duplicates(subset=["sku"])
     df = pd.merge(df, mapping, on="sku", how="left")
     df["product_name"] = df["product_name"].fillna("unknown")
 
-    # 4) filter sold only and order
-    df = df.loc[
+    # filter out zero sales and order by name
+    df_final = df.loc[
         df["total_quantity"] > 0,
         ["product_name","onbuy_quantity","ebay_quantity","total_quantity","sku"]
-    ]
-    return df.sort_values("product_name")
+    ].sort_values("product_name")
 
-# — If you ever run this module directly, it’ll write Excel —
+    return df_final
+
+# — If run directly, write to Excel —
 if __name__ == "__main__":
     df = build_report_df()
     df.to_excel("combined_products_sales.xlsx", index=False)
