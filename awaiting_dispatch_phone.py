@@ -131,7 +131,7 @@ def build_report_df():
     # filter out zero sales and order by name
     df_final = df.loc[
         df["total_quantity"] > 0,
-        ["product_name","onbuy_quantity","ebay_quantity","total_quantity","sku"]
+        ["product_name","total_quantity","onbuy_quantity","ebay_quantity","sku"]
     ].sort_values("product_name")
 
     return df_final
