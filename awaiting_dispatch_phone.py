@@ -7,9 +7,9 @@ import ast
 ONBUY_CONSUMER_KEY = "ck_live_36f7d198893e4d55a95db09e106c03d2"
 ONBUY_SECRET_KEY   = "sk_live_2f420836ad73482b85db95a4c51597f2"
 
-EBAY_CLIENT_ID     = "Samerjee-Inventor-PRD-3dc6cc3e0-579dd8d5"
-EBAY_CLIENT_SECRET = "PRD-dc6cc3e099d7-3406-41ed-b530-0975"
-EBAY_REFRESH_TOKEN = "v^1.1#i^1#f^0#p^3#I^3#r^1#t^Ul4xMF81OkYwQTcwRDI5RDEwQzQyNERFNEJCRThBOUY4NDU4MUNGXzFfMSNFXjI2MA=="
+EBAY_CLIENT_ID     = "JasalKhu-Inventor-PRD-480eb0c02-ce273d1d"
+EBAY_CLIENT_SECRET = "PRD-80eb0c024054-e725-494d-8435-1114"
+EBAY_REFRESH_TOKEN = "v^1.1#i^1#f^0#p^3#I^3#r^1#t^Ul4xMF8xMDo2NUU2QTVCMTM1MEEwNjg2NjVCNTgxQjdFNUI1NjBERV8xXzEjRV4yNjA"
 
 MAPPING_FILE = "Product ID Table.xlsx"
 
@@ -131,7 +131,7 @@ def build_report_df():
     # filter out zero sales and order by name
     df_final = df.loc[
         df["total_quantity"] > 0,
-        ["product_name","total_quantity","onbuy_quantity","ebay_quantity","sku"]
+        ["product_name","total_quantity","ebay_quantity","onbuy_quantity","sku"]
     ].sort_values("product_name")
 
     return df_final
