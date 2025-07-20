@@ -29,7 +29,7 @@ if st.button("Fetch & Refresh Report"):
     df_display = df_display[cols]
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total eBay Orders", ebay_count)
+    col1.metric("Total eBay Orderssssss", ebay_count)
     col2.metric("Total OnBuy Orders", onbuy_count)
     col3.metric("Total Orders", total_count)
 
