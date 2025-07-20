@@ -31,6 +31,6 @@ if st.button("Fetch & Refresh Report"):
 
     # — Show table & download —
     st.success(f"Aggregated {len(df)} products sold")
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, use_container_width=True, hide_index=True)
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("Download CSV", data=csv, file_name="combined_report.csv")
