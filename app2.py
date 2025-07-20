@@ -1,4 +1,5 @@
 import streamlit as st
+st.write("Streamlit version:", st.__version__)
 from awaiting_dispatch_phone import (
     build_report_df,
     get_onbuy_token, get_onbuy_orders,
