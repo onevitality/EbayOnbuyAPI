@@ -14,24 +14,28 @@ st.write("Click the button below to fetch the latest report:")
 # — Fetch button —
 if st.button("Fetch & Refresh Report"):
     with st.spinner("Pulling data… this can take a moment"):
-        # 1) Pull raw lists to count orders
         onbuy_list = get_onbuy_orders(get_onbuy_token())
         ebay_list  = get_ebay_orders(get_ebay_token())
         onbuy_count = len(onbuy_list)
         ebay_count  = len(ebay_list)
         total_count = onbuy_count + ebay_count
-
-        # 2) Build aggregated DataFrame
         df = build_report_df()
 
-    # — Display metrics —
+    # Move index to last column (row_id) before displaying
+    df_display = df.reset_index().rename(columns={'index': 'row_id'})
+    cols = [c for c in df_display.columns if c != 'row_id'] + ['row_id']
+    df_display = df_display[cols]
+
     col1, col2, col3 = st.columns(3)
     col1.metric("Total eBay Orders", ebay_count)
     col2.metric("Total OnBuy Orders", onbuy_count)
     col3.metric("Total Orders", total_count)
 
-    # — Show table & download —
-    st.success(f"Aggregated {len(df)} products sold")
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download CSV", data=csv, file_name="combined_report.csv")
+    st.success(f"Aggregated {len(df_display)} products sold")
+    st.dataframe(df_display, use_container_width=True, hide_index=True)
+    st.download_button(
+        "Download CSV",
+        data=df_display.to_csv(index=False).encode("utf-8"),
+        file_name="combined_report.csv"
+    )
+
