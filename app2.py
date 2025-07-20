@@ -1,6 +1,4 @@
-APP_VERSION = "app2.py deployed 2025-07-20 15:10 test A"
 import streamlit as st
-st.sidebar.info(APP_VERSION)
 
 from awaiting_dispatch_phone import (
     build_report_df,
